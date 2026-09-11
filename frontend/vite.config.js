@@ -4,8 +4,10 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-<<<<<<< HEAD
-  plugins: [react()],
+  plugins: [
+    react(),
+    tailwindcss(),
+  ],
   server: {
     port: 5173,
     proxy: {
@@ -16,10 +18,4 @@ export default defineConfig({
       },
     },
   },
-=======
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
->>>>>>> 213f72d (Add responsive student and teacher login page)
 })
