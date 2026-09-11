@@ -136,4 +136,90 @@ export const api = {
     });
     return res.json();
   },
+
+  // Assignments & Homework
+  getAssignments: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${BASE_URL}/assignments${query ? `?${query}` : ''}`, {
+      headers: getAuthHeaders(),
+    });
+    return res.json();
+  },
+
+  getAssignmentById: async (id) => {
+    const res = await fetch(`${BASE_URL}/assignments/${id}`, {
+      headers: getAuthHeaders(),
+    });
+    return res.json();
+  },
+
+  createAssignment: async (assignmentData) => {
+    const res = await fetch(`${BASE_URL}/assignments`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(assignmentData),
+    });
+    return res.json();
+  },
+
+  deleteAssignment: async (id) => {
+    const res = await fetch(`${BASE_URL}/assignments/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    return res.json();
+  },
+
+  submitAssignment: async (id, submissionData) => {
+    const res = await fetch(`${BASE_URL}/assignments/${id}/submit`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(submissionData),
+    });
+    return res.json();
+  },
+
+  gradeSubmission: async (submissionId, gradeData) => {
+    const res = await fetch(`${BASE_URL}/assignments/submissions/${submissionId}/grade`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(gradeData),
+    });
+    return res.json();
+  },
+
+  aiEvaluateSubmission: async (submissionId) => {
+    const res = await fetch(`${BASE_URL}/assignments/submissions/${submissionId}/ai-evaluate`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    return res.json();
+  },
+
+  // Classwork & Study Materials
+  getMaterials: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${BASE_URL}/materials${query ? `?${query}` : ''}`, {
+      headers: getAuthHeaders(),
+    });
+    return res.json();
+  },
+
+  createMaterial: async (materialData) => {
+    const res = await fetch(`${BASE_URL}/materials`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(materialData),
+    });
+    return res.json();
+  },
+
+  deleteMaterial: async (id) => {
+    const res = await fetch(`${BASE_URL}/materials/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    return res.json();
+  },
 };
+

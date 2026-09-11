@@ -41,14 +41,14 @@ export default function CreateClass({ user, onLogout, onNavigate, onSelectClass 
         classCode: formData.classCode,
       });
 
-      if (response?.class) {
+      if (response?.success && response?.class) {
         if (onSelectClass) onSelectClass(response.class);
         onNavigate('teacher_dashboard');
       } else {
-        setErrorMessage('Failed to create classroom session in database');
+        setErrorMessage(response?.message || 'Unable to create classroom session. Please check your connection and try again.');
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Error saving class to database. Please check connection.');
+      setErrorMessage(err.message || 'Unable to connect to the server. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);
     }

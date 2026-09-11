@@ -6,6 +6,8 @@ const authRoutes = require('./routes/authRoutes');
 const classRoutes = require('./routes/classRoutes');
 const questionRoutes = require('./routes/questionRoutes');
 const summaryRoutes = require('./routes/summaryRoutes');
+const assignmentRoutes = require('./routes/assignmentRoutes');
+const materialRoutes = require('./routes/materialRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -26,6 +28,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/classes', classRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/summary', summaryRoutes);
+app.use('/api/assignments', assignmentRoutes);
+app.use('/api/materials', materialRoutes);
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {

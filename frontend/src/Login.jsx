@@ -462,10 +462,13 @@ export default function Login({ onLoginSuccess }) {
                         Didn't receive code?{' '}
                         <button
                           type="button"
-                          onClick={() => alert('Verification code resent.')}
+                          onClick={() => {
+                            setErrorMessage('');
+                            setForgotStep(2);
+                          }}
                           className="text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
                         >
-                          Resend Code
+                          Resend Code (1234)
                         </button>
                       </p>
                     </div>

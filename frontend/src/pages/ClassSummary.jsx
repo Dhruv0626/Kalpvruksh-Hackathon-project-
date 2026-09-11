@@ -243,9 +243,12 @@ export default function ClassSummary({ user, activeClass, onLogout, onNavigate }
         {/* Hero Header Card */}
         <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-gray-900/90 border border-gray-200 dark:border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">
                 Post-Class Analytics
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1">
+                <CheckCircle2 size={12} /> Completed
               </span>
               {currentClass.classCode && (
                 <span className="text-xs text-gray-400">

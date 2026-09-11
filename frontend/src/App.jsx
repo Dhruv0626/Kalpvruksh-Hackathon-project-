@@ -7,6 +7,7 @@ import JoinClass from './pages/JoinClass';
 import LiveClass from './pages/LiveClass';
 import TeacherDashboard from './pages/TeacherDashboard';
 import ClassSummary from './pages/ClassSummary';
+import Classwork from './pages/Classwork';
 
 // URL Path to Page Mapping
 const ROUTE_MAP = {
@@ -22,6 +23,9 @@ const ROUTE_MAP = {
   '/teacher-dashboard': 'teacher_dashboard',
   '/class-summary': 'class_summary',
   '/summary': 'class_summary',
+  '/classwork': 'classwork',
+  '/assignments': 'classwork',
+  '/materials': 'classwork',
 };
 
 // Page Key to Canonical URL Path
@@ -34,6 +38,7 @@ const PAGE_TO_PATH = {
   live_class: '/live-class',
   teacher_dashboard: '/teacher-dashboard',
   class_summary: '/class-summary',
+  classwork: '/classwork',
 };
 
 function getPageFromPath(path, user) {
@@ -213,6 +218,16 @@ function App() {
     case 'class_summary':
       return (
         <ClassSummary
+          user={currentUser}
+          activeClass={activeClass}
+          onLogout={handleLogout}
+          onNavigate={handleNavigate}
+        />
+      );
+
+    case 'classwork':
+      return (
+        <Classwork
           user={currentUser}
           activeClass={activeClass}
           onLogout={handleLogout}

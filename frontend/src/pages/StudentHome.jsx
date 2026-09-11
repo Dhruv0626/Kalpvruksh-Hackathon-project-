@@ -12,7 +12,9 @@ import {
   TrendingUp,
   MessageSquare,
   Zap,
-  Users
+  Users,
+  FileText,
+  Layers
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import PriorityBadge from '../components/PriorityBadge';
@@ -39,6 +41,7 @@ export default function StudentHome({ user, onLogout, onNavigate, onSelectClass 
             subject: c.subject,
             topic: c.topic || 'Live Lecture',
             instructor: c.teacherId?.name || 'Faculty Instructor',
+            status: c.status || 'ended',
             isLive: c.status === 'active',
             studentsCount: c.students?.length || 0,
             activeDoubtsCount: 0,
@@ -177,6 +180,31 @@ export default function StudentHome({ user, onLogout, onNavigate, onSelectClass 
           </div>
         </div>
 
+        {/* Quick Feature Hub Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div
+            onClick={() => onNavigate('classwork')}
+            className="p-6 rounded-3xl bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-white/10 shadow-sm hover:border-indigo-500/40 transition-all cursor-pointer space-y-2 group"
+          >
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <FileText size={22} />
+            </div>
+            <h3 className="font-bold text-base text-gray-900 dark:text-white">Assignments & Homework Hub</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Turn in assignments, receive instant AI feedback, and view instructor grades.</p>
+          </div>
+
+          <div
+            onClick={() => onNavigate('class_summary')}
+            className="p-6 rounded-3xl bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-white/10 shadow-sm hover:border-purple-500/40 transition-all cursor-pointer space-y-2 group"
+          >
+            <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <BookOpen size={22} />
+            </div>
+            <h3 className="font-bold text-base text-gray-900 dark:text-white">Class Summaries & Analytics</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Review solved doubts from previous lectures and view topic breakdowns.</p>
+          </div>
+        </div>
+
         {/* Enrolled Classes List */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -227,9 +255,13 @@ export default function StudentHome({ user, onLogout, onNavigate, onSelectClass 
                         <span className="px-2.5 py-0.5 rounded-full bg-rose-500 text-white text-[11px] font-bold animate-pulse flex items-center gap-1">
                           <Radio size={12} /> LIVE NOW
                         </span>
+                      ) : c.status === 'ended' ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[11px] font-bold flex items-center gap-1">
+                          <CheckCircle2 size={12} /> Completed
+                        </span>
                       ) : (
-                        <span className="px-2.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-[11px] font-semibold">
-                          Scheduled
+                        <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-[11px] font-semibold flex items-center gap-1">
+                          <Clock size={12} /> Scheduled
                         </span>
                       )}
                     </div>

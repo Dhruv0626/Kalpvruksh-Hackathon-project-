@@ -138,7 +138,7 @@ router.post('/login', async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials or account does not exist for this role',
+        message: 'No account found with this email/ID for the selected role. Please check your credentials or register.',
       });
     }
 
@@ -146,7 +146,7 @@ router.post('/login', async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email/ID or password',
+        message: 'Incorrect password. Please double-check your password and try again.',
       });
     }
 
@@ -172,7 +172,7 @@ router.post('/login', async (req, res) => {
     console.error('Login Error:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Server error during login',
+      message: 'Unable to sign in at the moment. Please check your connection and try again.',
     });
   }
 });

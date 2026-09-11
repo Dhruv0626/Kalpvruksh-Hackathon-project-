@@ -9,7 +9,8 @@ import {
   Users,
   Home,
   PlusCircle,
-  LogIn
+  LogIn,
+  FileText
 } from 'lucide-react';
 
 export default function Navbar({ user, onLogout, activeClass, onNavigate, currentPage }) {
@@ -146,6 +147,18 @@ export default function Navbar({ user, onLogout, activeClass, onNavigate, curren
               </button>
             </>
           )}
+
+          <button
+            type="button"
+            onClick={() => onNavigate && onNavigate('classwork')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              currentPage === 'classwork'
+                ? isTeacher ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <FileText size={14} /> Classwork & Tasks
+          </button>
 
           <button
             type="button"

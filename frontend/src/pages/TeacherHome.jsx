@@ -33,6 +33,7 @@ export default function TeacherHome({ user, onLogout, onNavigate, onSelectClass 
             classCode: c.classCode,
             subject: c.subject,
             topic: c.topic || 'Live Session',
+            status: c.status || 'ended',
             isLive: c.status === 'active',
             studentsCount: c.students?.length || 0,
             unansweredDoubts: 0,
@@ -79,7 +80,7 @@ export default function TeacherHome({ user, onLogout, onNavigate, onSelectClass 
         </div>
 
         {/* Quick Actions Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div
             onClick={() => onNavigate('create_class')}
             className="p-6 rounded-3xl bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-white/10 shadow-sm hover:border-emerald-500/40 transition-all cursor-pointer space-y-2 group"
@@ -88,7 +89,18 @@ export default function TeacherHome({ user, onLogout, onNavigate, onSelectClass 
               <PlusCircle size={22} />
             </div>
             <h3 className="font-bold text-base text-gray-900 dark:text-white">Create Class Session</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Generate a unique 6-character class code and setup live question filtering.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Generate a unique 6-character code and start live doubt filtering.</p>
+          </div>
+
+          <div
+            onClick={() => onNavigate('classwork')}
+            className="p-6 rounded-3xl bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-white/10 shadow-sm hover:border-indigo-500/40 transition-all cursor-pointer space-y-2 group"
+          >
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <FileCheck size={22} />
+            </div>
+            <h3 className="font-bold text-base text-gray-900 dark:text-white">Classwork & Assignments</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Post tasks, auto-evaluate submissions with AI, and upload study notes.</p>
           </div>
 
           <div
@@ -152,8 +164,14 @@ export default function TeacherHome({ user, onLogout, onNavigate, onSelectClass 
                         <span className="px-2.5 py-0.5 rounded-full bg-rose-500 text-white text-[11px] font-bold animate-pulse flex items-center gap-1">
                           <Radio size={12} /> ACTIVE
                         </span>
+                      ) : c.status === 'ended' ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[11px] font-bold flex items-center gap-1">
+                          <CheckCircle2 size={12} /> Completed
+                        </span>
                       ) : (
-                        <span className="text-xs text-gray-400">Ended</span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-[11px] font-semibold flex items-center gap-1">
+                          <Clock size={12} /> Scheduled
+                        </span>
                       )}
                     </div>
 

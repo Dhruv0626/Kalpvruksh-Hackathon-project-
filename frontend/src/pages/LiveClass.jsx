@@ -108,7 +108,7 @@ export default function LiveClass({ user, activeClass, onLogout, onNavigate, onE
     const classId = activeClass?._id || activeClass?.id;
 
     if (!classId) {
-      setToastMessage('Error: No active class session connected.');
+      setToastMessage('No active live classroom connected. Please rejoin the class from your dashboard.');
       setShowToast(true);
       setIsSubmitting(false);
       return;
@@ -123,9 +123,9 @@ export default function LiveClass({ user, activeClass, onLogout, onNavigate, onE
       });
 
       if (apiResponse?.group) {
-        setToastMessage(apiResponse.message || 'Question grouped and submitted');
+        setToastMessage(apiResponse.message || 'Your doubt has been submitted and organized by AI.');
       } else {
-        setToastMessage('Question submitted successfully');
+        setToastMessage('Your doubt has been submitted to the instructor.');
       }
 
       // Immediate refresh from MongoDB
@@ -134,7 +134,7 @@ export default function LiveClass({ user, activeClass, onLogout, onNavigate, onE
         setQuestionGroups(res.groups);
       }
     } catch (err) {
-      setToastMessage(`Error submitting question: ${err.message}`);
+      setToastMessage('Unable to send question. Please check your internet connection and try again.');
     } finally {
       setIsSubmitting(false);
       setShowToast(true);
@@ -152,9 +152,9 @@ export default function LiveClass({ user, activeClass, onLogout, onNavigate, onE
           setQuestionGroups(res.groups);
         }
       }
-      setToastMessage('Vote recorded for this question group');
+      setToastMessage('Marked: You have this doubt too!');
     } catch (err) {
-      setToastMessage('Vote recorded for this question group');
+      setToastMessage('Marked: You have this doubt too!');
     }
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);

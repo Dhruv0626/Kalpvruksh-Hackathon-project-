@@ -17,7 +17,7 @@ exports.createClass = async (req, res) => {
     if (!className || !subject) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide course name and subject',
+        message: 'Please provide both the course name and subject department.',
       });
     }
 
@@ -28,7 +28,7 @@ exports.createClass = async (req, res) => {
     if (existing) {
       return res.status(400).json({
         success: false,
-        message: `Class code ${code} is already in use. Please choose another code.`,
+        message: `Class code '${code}' is already assigned to another session. Please choose a different code or generate a new one.`,
       });
     }
 
@@ -44,14 +44,14 @@ exports.createClass = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Class created successfully',
+      message: 'Classroom session created successfully.',
       class: newClass,
     });
   } catch (error) {
     console.error('Create Class Error:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Server error while creating class',
+      message: 'Unable to create class session right now. Please check your connection and try again.',
     });
   }
 };
@@ -66,7 +66,7 @@ exports.joinClass = async (req, res) => {
     if (!classCode) {
       return res.status(400).json({
         success: false,
-        message: 'Please enter a 6-character class code',
+        message: 'Please enter a valid 6-character class code (e.g. CS501).',
       });
     }
 
@@ -76,14 +76,14 @@ exports.joinClass = async (req, res) => {
     if (!classSession) {
       return res.status(404).json({
         success: false,
-        message: `No active class found with code ${code}`,
+        message: `No classroom session found with code '${code}'. Please verify the code with your instructor.`,
       });
     }
 
     if (classSession.status === 'ended') {
       return res.status(400).json({
         success: false,
-        message: `This classroom session (${classSession.className}) has already ended. You cannot join a closed lecture.`,
+        message: `This classroom session (${classSession.className}) has already ended. You cannot join a concluded lecture.`,
       });
     }
 
@@ -103,7 +103,7 @@ exports.joinClass = async (req, res) => {
     console.error('Join Class Error:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Server error while joining class',
+      message: 'Unable to connect to this classroom session right now. Please check your connection and try again.',
     });
   }
 };
