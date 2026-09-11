@@ -20,10 +20,11 @@ import {
   School,
   FileCheck,
   IdCard,
-  LockKeyhole
+  LockKeyhole,
+  AlertCircle
 } from 'lucide-react';
 
-export default function Login() {
+export default function Login({ onLoginSuccess }) {
   const [role, setRole] = useState('student'); // 'student' | 'teacher'
   const [mode, setMode] = useState('signin'); // 'signin' | 'signup' | 'forgot' | 'success'
   const [showPassword, setShowPassword] = useState(false);
@@ -42,6 +43,8 @@ export default function Login() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [userProfile, setUserProfile] = useState(null);
   const [forgotStep, setForgotStep] = useState(1);
   const [otp, setOtp] = useState(['', '', '', '']);
 
@@ -68,6 +71,7 @@ export default function Login() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+    if (errorMessage) setErrorMessage('');
   };
 
   // Password strength calculation
@@ -82,14 +86,51 @@ export default function Login() {
 
   const passwordStrength = getPasswordStrength(formData.password);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage('');
 
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const endpoint = mode === 'signin' ? '/api/auth/login' : '/api/auth/register';
+      const payload = mode === 'signin'
+        ? {
+            role,
+            identifier: formData.identifier,
+            teacherId: role === 'teacher' ? formData.teacherId : undefined,
+            password: formData.password,
+          }
+        : {
+            role,
+            name: formData.name,
+            email: formData.identifier,
+            teacherId: role === 'teacher' ? formData.teacherId : undefined,
+            password: formData.password,
+            departmentOrGrade: formData.departmentOrGrade,
+          };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Authentication failed');
+      }
+
+      if (data.token) {
+        localStorage.setItem('edunova_token', data.token);
+      }
+      setUserProfile(data.user);
       setMode('success');
-    }, 600);
+    } catch (err) {
+      setErrorMessage(err.message || 'Failed to connect to authentication server');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleForgotSubmit = (e) => {
@@ -298,35 +339,46 @@ export default function Login() {
 
                 {/* Entered Account Details */}
                 <div className="p-4 bg-gray-100/90 dark:bg-gray-800/60 rounded-2xl border border-gray-200 dark:border-white/10 text-left text-xs mb-6 space-y-2 text-gray-700 dark:text-gray-300">
-                  {formData.name && (
+                  {(userProfile?.name || formData.name) && (
                     <div className="flex justify-between">
                       <span className="text-gray-500 dark:text-gray-400">Name:</span>
-                      <span className="font-semibold">{formData.name}</span>
+                      <span className="font-semibold">{userProfile?.name || formData.name}</span>
                     </div>
                   )}
-                  {!isStudent && formData.teacherId && (
+                  {!isStudent && (userProfile?.teacherId || formData.teacherId) && (
                     <div className="flex justify-between">
                       <span className="text-gray-500 dark:text-gray-400">Teacher ID:</span>
-                      <span className="font-semibold font-mono">{formData.teacherId}</span>
+                      <span className="font-semibold font-mono">{userProfile?.teacherId || formData.teacherId}</span>
                     </div>
                   )}
-                  {formData.identifier && (
+                  {(userProfile?.email || formData.identifier) && (
                     <div className="flex justify-between">
                       <span className="text-gray-500 dark:text-gray-400">Account:</span>
-                      <span className="font-semibold">{formData.identifier}</span>
+                      <span className="font-semibold">{userProfile?.email || formData.identifier}</span>
                     </div>
                   )}
-                  {formData.departmentOrGrade && (
+                  {(userProfile?.departmentOrGrade || formData.departmentOrGrade) && (
                     <div className="flex justify-between">
                       <span className="text-gray-500 dark:text-gray-400">Department / Grade:</span>
-                      <span className="font-semibold">{formData.departmentOrGrade}</span>
+                      <span className="font-semibold">{userProfile?.departmentOrGrade || formData.departmentOrGrade}</span>
                     </div>
                   )}
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => alert(`Redirecting to ${isStudent ? 'Student Dashboard' : 'Teacher Dashboard'}...`)}
+                  onClick={() => {
+                    const authenticatedUser = userProfile || {
+                      name: formData.name || (isStudent ? 'Student User' : 'Faculty Member'),
+                      email: formData.identifier,
+                      role: role,
+                      teacherId: formData.teacherId,
+                      departmentOrGrade: formData.departmentOrGrade,
+                    };
+                    if (onLoginSuccess) {
+                      onLoginSuccess(authenticatedUser);
+                    }
+                  }}
                   className={`w-full py-3.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 shadow-lg transition-all duration-200 hover:brightness-110 active:scale-98 cursor-pointer ${
                     isStudent
                       ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-indigo-500/30'
@@ -339,7 +391,9 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => {
+                    localStorage.removeItem('edunova_token');
                     setMode('signin');
+                    setUserProfile(null);
                     setFormData({
                       name: '',
                       identifier: '',
@@ -469,7 +523,10 @@ export default function Login() {
                 <div className="grid grid-cols-2 p-1 bg-gray-200/70 dark:bg-gray-800/70 border border-gray-300/60 dark:border-white/10 rounded-2xl mb-6">
                   <button
                     type="button"
-                    onClick={() => setRole('student')}
+                    onClick={() => {
+                      setRole('student');
+                      setErrorMessage('');
+                    }}
                     className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
                       isStudent
                         ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/30'
@@ -481,7 +538,10 @@ export default function Login() {
 
                   <button
                     type="button"
-                    onClick={() => setRole('teacher')}
+                    onClick={() => {
+                      setRole('teacher');
+                      setErrorMessage('');
+                    }}
                     className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
                       !isStudent
                         ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/30'
@@ -507,6 +567,14 @@ export default function Login() {
                         : 'Register your faculty profile to access management tools.'}
                   </p>
                 </div>
+
+                {/* Error message alert banner */}
+                {errorMessage && (
+                  <div className="flex items-center gap-2.5 p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs mb-4 animate-slide-up">
+                    <AlertCircle size={16} className="shrink-0" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
 
                 {/* Login/Signup Form */}
                 <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
@@ -703,60 +771,6 @@ export default function Login() {
                   </button>
                 </form>
 
-                {/* Social Login Buttons - commented out
-                <div className="flex items-center my-4 text-[11px] uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                  <div className="flex-1 h-px bg-gray-200 dark:bg-white/10" />
-                  <span className="px-3">or continue with</span>
-                  <div className="flex-1 h-px bg-gray-200 dark:bg-white/10" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleSubmit({ preventDefault: () => {} });
-                    }}
-                    className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800/80 dark:hover:bg-gray-700/80 border border-gray-300 dark:border-white/10 text-xs font-semibold text-gray-800 dark:text-gray-200 transition-all hover:scale-[1.02] active:scale-98 cursor-pointer shadow-sm dark:shadow-none"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24">
-                      <path
-                        fill="#4285F4"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="#34A853"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="#FBBC05"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                      />
-                      <path
-                        fill="#EA4335"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                      />
-                    </svg>
-                    Google Edu
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleSubmit({ preventDefault: () => {} });
-                    }}
-                    className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800/80 dark:hover:bg-gray-700/80 border border-gray-300 dark:border-white/10 text-xs font-semibold text-gray-800 dark:text-gray-200 transition-all hover:scale-[1.02] active:scale-98 cursor-pointer shadow-sm dark:shadow-none"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24">
-                      <path fill="#f25022" d="M1 1h10v10H1z" />
-                      <path fill="#00a4ef" d="M1 13h10v10H1z" />
-                      <path fill="#7fba00" d="M13 1h10v10H13z" />
-                      <path fill="#ffb900" d="M13 13h10v10H13z" />
-                    </svg>
-                    Microsoft 365
-                  </button>
-                </div>
-                */}
-
                 {/* Switch between Sign In / Sign Up */}
                 <div className="text-center mt-5 text-xs text-gray-600 dark:text-gray-400">
                   {mode === 'signin' ? (
@@ -764,7 +778,10 @@ export default function Login() {
                       Don't have an account yet?{' '}
                       <button
                         type="button"
-                        onClick={() => setMode('signup')}
+                        onClick={() => {
+                          setMode('signup');
+                          setErrorMessage('');
+                        }}
                         className={`font-bold hover:underline cursor-pointer ${
                           isStudent ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'
                         }`}
@@ -777,7 +794,10 @@ export default function Login() {
                       Already have an account?{' '}
                       <button
                         type="button"
-                        onClick={() => setMode('signin')}
+                        onClick={() => {
+                          setMode('signin');
+                          setErrorMessage('');
+                        }}
                         className={`font-bold hover:underline cursor-pointer ${
                           isStudent ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'
                         }`}
