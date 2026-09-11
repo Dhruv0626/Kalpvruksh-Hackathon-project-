@@ -1,8 +1,10 @@
-import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+<<<<<<< HEAD
   plugins: [react()],
   server: {
     port: 5173,
@@ -14,4 +16,10 @@ export default defineConfig({
       },
     },
   },
+=======
+  plugins: [
+    react(),
+    tailwindcss(),
+  ],
+>>>>>>> 213f72d (Add responsive student and teacher login page)
 })
