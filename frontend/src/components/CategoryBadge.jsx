@@ -3,24 +3,29 @@ export default function CategoryBadge({ category = 'conceptual' }) {
 
   const configs = {
     conceptual: {
-      label: '🧠 CONCEPTUAL',
-      style: 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30',
+      label: 'Conceptual',
+      dot: 'bg-purple-500',
+      style: 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-500/20',
     },
     administrative: {
-      label: '📅 ADMINISTRATIVE',
-      style: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30',
+      label: 'Administrative',
+      dot: 'bg-blue-500',
+      style: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/20',
     },
     technical: {
-      label: '🔧 TECHNICAL',
-      style: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30',
+      label: 'Technical',
+      dot: 'bg-cyan-500',
+      style: 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-500/20',
     },
     homework: {
-      label: '📚 HOMEWORK',
-      style: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+      label: 'Homework',
+      dot: 'bg-emerald-500',
+      style: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/20',
     },
     other: {
-      label: '💬 GENERAL',
-      style: 'bg-gray-500/15 text-gray-600 dark:text-gray-400 border-gray-500/30',
+      label: 'General',
+      dot: 'bg-gray-400',
+      style: 'bg-gray-50 dark:bg-gray-500/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-500/20',
     },
   };
 
@@ -28,8 +33,9 @@ export default function CategoryBadge({ category = 'conceptual' }) {
 
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${config.style}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold border ${config.style}`}
     >
+      <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
       {config.label}
     </span>
   );

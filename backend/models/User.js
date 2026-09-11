@@ -34,6 +34,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    course: {
+      type: String,
+      trim: true,
+    },
+    semester: {
+      type: String,
+      trim: true,
+    },
     password: {
       type: String,
       required: [true, 'Password is required'],

@@ -1,53 +1,95 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LogIn, Radio, ArrowRight, BookOpen, Users, Sparkles, AlertCircle } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import { api } from '../services/api';
 
 export default function JoinClass({ user, onLogout, onNavigate, onSelectClass }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
+  const [activePublicClasses, setActivePublicClasses] = useState([]);
 
-  const activePublicClasses = [
-    {
-      id: 'cls_java101',
-      className: 'Java & Object-Oriented Programming',
-      classCode: 'JAVA101',
-      subject: 'Computer Science',
-      topic: 'Inheritance & Polymorphism in Java',
-      instructor: 'Dr. Priya Mehta',
-      studentsCount: 48,
-    },
-    {
-      id: 'cls_dbms201',
-      className: 'Database Management Systems',
-      classCode: 'DBMS201',
-      subject: 'Computer Science',
-      topic: 'Normalization & BCNF Rules',
-      instructor: 'Prof. Rajesh Kumar',
-      studentsCount: 36,
-    },
-  ];
+  useEffect(() => {
+    async function loadLiveClasses() {
+      try {
+        const res = await api.getActiveClasses();
+        if (res?.classes) {
+          const formatted = res.classes.map((c) => ({
+            id: c._id,
+            _id: c._id,
+            className: c.className,
+            classCode: c.classCode,
+            subject: c.subject,
+            topic: c.topic || 'Live Session',
+            instructor: c.teacherId?.name || 'Faculty Instructor',
+            studentsCount: c.students?.length || 0,
+            isLive: c.status === 'active',
+          }));
+          setActivePublicClasses(formatted);
+        }
+      } catch (err) {
+        console.error('Failed to load active classes:', err);
+      }
+    }
+    loadLiveClasses();
+  }, []);
 
-  const handleJoinByCode = (e) => {
+  const handleJoinByCode = async (e) => {
     e.preventDefault();
     if (!code.trim()) {
       setError('Please enter a valid class code');
       return;
     }
 
-    const matched = activePublicClasses.find(
-      (c) => c.classCode.toLowerCase() === code.trim().toLowerCase()
-    ) || {
-      id: 'cls_' + code.toUpperCase(),
-      className: `Live Course (${code.toUpperCase()})`,
-      classCode: code.toUpperCase(),
-      subject: 'Computer Science',
-      topic: 'Live Q&A Lecture',
-      instructor: 'Faculty Instructor',
-      studentsCount: 32,
-    };
+    setIsJoining(true);
+    setError('');
 
-    if (onSelectClass) onSelectClass(matched);
-    onNavigate('live_class');
+    try {
+      const res = await api.joinClass(code.trim().toUpperCase());
+      if (res?.success && res?.class) {
+        if (onSelectClass) onSelectClass(res.class);
+        onNavigate('live_class');
+      } else {
+        setError(res?.message || 'No active classroom found with that code.');
+      }
+    } catch (err) {
+      setError(err.message || 'No classroom session found with this code.');
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const handleJoinCard = async (classCode) => {
+    setIsJoining(true);
+    setError('');
+    try {
+      const res = await api.joinClass(classCode);
+      if (res?.success && res?.class) {
+        if (onSelectClass) onSelectClass(res.class);
+        onNavigate('live_class');
+      } else {
+        setError(res?.message || 'This classroom session has ended or is unavailable.');
+        // refresh list
+        const resActive = await api.getActiveClasses();
+        if (resActive?.classes) {
+          setActivePublicClasses(resActive.classes.map((c) => ({
+            id: c._id,
+            _id: c._id,
+            className: c.className,
+            classCode: c.classCode,
+            subject: c.subject,
+            topic: c.topic || 'Live Session',
+            instructor: c.teacherId?.name || 'Faculty Instructor',
+            studentsCount: c.students?.length || 0,
+            isLive: c.status === 'active',
+          })));
+        }
+      }
+    } catch (err) {
+      setError(err.message || 'Error joining classroom.');
+    } finally {
+      setIsJoining(false);
+    }
   };
 
   return (
@@ -70,8 +112,12 @@ export default function JoinClass({ user, onLogout, onNavigate, onSelectClass })
           </div>
 
           {error && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
-              <AlertCircle size={15} /> {error}
+            <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border-2 border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs sm:text-sm flex items-start gap-3 shadow-md animate-fade-in">
+              <AlertCircle size={18} className="shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
+              <div className="space-y-0.5">
+                <span className="font-bold block">Unable to Join Session</span>
+                <p className="font-medium text-xs leading-relaxed">{error}</p>
+              </div>
             </div>
           )}
 
@@ -94,58 +140,68 @@ export default function JoinClass({ user, onLogout, onNavigate, onSelectClass })
 
             <button
               type="submit"
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white font-bold text-sm shadow-xl shadow-indigo-500/25 hover:brightness-110 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              disabled={isJoining}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white font-bold text-sm shadow-xl shadow-indigo-500/25 hover:brightness-110 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              <Radio size={16} /> Enter Live Classroom
+              {isJoining ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Verifying Session...</span>
+                </>
+              ) : (
+                <>
+                  <Radio size={16} />
+                  <span>Enter Live Classroom</span>
+                </>
+              )}
             </button>
           </form>
         </div>
 
         {/* Or Select from Active Courses */}
-        <div className="space-y-4 max-w-2xl mx-auto w-full">
-          <div className="text-center">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Or Choose from Ongoing Live Sessions
-            </span>
-          </div>
+        {activePublicClasses.length > 0 && (
+          <div className="space-y-4 max-w-2xl mx-auto w-full">
+            <div className="text-center">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Or Choose from Ongoing Live Sessions
+              </span>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {activePublicClasses.map((c) => (
-              <div
-                key={c.id}
-                onClick={() => {
-                  if (onSelectClass) onSelectClass(c);
-                  onNavigate('live_class');
-                }}
-                className="p-5 rounded-2xl bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-white/10 hover:border-indigo-500/40 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between space-y-3 group"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[11px] font-mono font-bold text-gray-700 dark:text-gray-300">
-                      {c.classCode}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {activePublicClasses.map((c) => (
+                <div
+                  key={c.id}
+                  onClick={() => handleJoinCard(c.classCode)}
+                  className="p-5 rounded-2xl bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-white/10 hover:border-indigo-500/40 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between space-y-3 group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[11px] font-mono font-bold text-gray-700 dark:text-gray-300">
+                        {c.classCode}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold animate-pulse flex items-center gap-1">
+                        <Radio size={10} /> LIVE
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-sm text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                      {c.className}
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Topic: {c.topic}</p>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t border-gray-100 dark:border-gray-800">
+                    <span className="flex items-center gap-1">
+                      <Users size={13} /> {c.studentsCount} Students
                     </span>
-                    <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold animate-pulse flex items-center gap-1">
-                      <Radio size={10} /> LIVE
+                    <span className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-0.5">
+                      Join <ArrowRight size={13} />
                     </span>
                   </div>
-                  <h4 className="font-bold text-sm text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                    {c.className}
-                  </h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Topic: {c.topic}</p>
                 </div>
-
-                <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t border-gray-100 dark:border-gray-800">
-                  <span className="flex items-center gap-1">
-                    <Users size={13} /> {c.studentsCount} Students
-                  </span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-0.5">
-                    Join <ArrowRight size={13} />
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   );

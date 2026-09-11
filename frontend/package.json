@@ -4,11 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "server": "npm --prefix ../backend run dev"
+    "preview": "vite preview --host",
+    "dev:backend": "npm --prefix ../backend run dev",
+    "dev:ai": "uvicorn main:app --port 8000 --reload --app-dir ../Ai-service",
+    "dev:all": "npx concurrently \"vite --host\" \"npm --prefix ../backend run dev\" \"uvicorn main:app --host 0.0.0.0 --port 8000 --reload --app-dir ../Ai-service\""
   },
   "dependencies": {
     "lucide-react": "^1.44.0",

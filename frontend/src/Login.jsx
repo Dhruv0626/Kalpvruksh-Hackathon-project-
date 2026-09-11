@@ -37,6 +37,9 @@ export default function Login({ onLoginSuccess }) {
     name: '',
     identifier: '',
     teacherId: '',
+    rollNumber: '',
+    course: 'B.Tech Computer Science',
+    semester: 'Semester 5',
     password: '',
     departmentOrGrade: '',
     rememberMe: true,
@@ -105,6 +108,9 @@ export default function Login({ onLoginSuccess }) {
             name: formData.name,
             email: formData.identifier,
             teacherId: role === 'teacher' ? formData.teacherId : undefined,
+            rollNumber: role === 'student' ? (formData.rollNumber || formData.identifier) : undefined,
+            course: role === 'student' ? formData.course : undefined,
+            semester: role === 'student' ? formData.semester : undefined,
             password: formData.password,
             departmentOrGrade: formData.departmentOrGrade,
           };
@@ -149,17 +155,6 @@ export default function Login({ onLoginSuccess }) {
 
   return (
     <div className="relative min-h-screen w-full flex overflow-x-hidden bg-slate-50 dark:bg-[#0b0f19] text-gray-900 dark:text-gray-100 transition-colors duration-300 select-none font-['Plus_Jakarta_Sans']">
-      {/* Ambient background glow orbs */}
-      <div
-        className={`pointer-events-none absolute -top-36 -left-36 w-[520px] h-[520px] rounded-full blur-3xl opacity-40 dark:opacity-30 animate-pulse-slow ${
-          isStudent ? 'bg-indigo-400 dark:bg-indigo-600' : 'bg-emerald-400 dark:bg-emerald-600'
-        }`}
-      />
-      <div
-        className={`pointer-events-none absolute -bottom-36 -right-28 w-[520px] h-[520px] rounded-full blur-3xl opacity-30 dark:opacity-25 animate-pulse-slow-reverse ${
-          isStudent ? 'bg-pink-400 dark:bg-pink-600' : 'bg-cyan-400 dark:bg-cyan-600'
-        }`}
-      />
 
       {/* Floating Theme Toggle */}
       <div className="absolute top-6 right-6 z-50">
@@ -186,7 +181,7 @@ export default function Login({ onLoginSuccess }) {
                   : 'bg-gradient-to-tr from-emerald-600 via-teal-600 to-cyan-500 shadow-emerald-500/30'
               }`}
             >
-              <Sparkles size={26} />
+              <GraduationCap size={26} />
             </div>
             <div>
               <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white font-['Outfit']">
@@ -601,6 +596,27 @@ export default function Login({ onLoginSuccess }) {
                     </div>
                   )}
 
+                  {/* Student Roll Number (for Student Signup) */}
+                  {mode === 'signup' && isStudent && (
+                    <div className="flex flex-col gap-1 text-left animate-slide-up">
+                      <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Roll Number / Student ID <span className="text-indigo-500">*</span>
+                      </label>
+                      <div className="relative flex items-center">
+                        <IdCard className="absolute left-3.5 text-indigo-500 pointer-events-none" size={17} />
+                        <input
+                          type="text"
+                          name="rollNumber"
+                          required
+                          placeholder="e.g. 23CS0104"
+                          value={formData.rollNumber}
+                          onChange={handleInputChange}
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800/80 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Teacher ID Field (Specially for Teachers) */}
                   {!isStudent && (
                     <div className="flex flex-col gap-1 text-left animate-slide-up">
@@ -613,7 +629,7 @@ export default function Login({ onLoginSuccess }) {
                           type="text"
                           name="teacherId"
                           required
-                          placeholder="Enter Teacher ID"
+                          placeholder="e.g. FAC-2026-001"
                           value={formData.teacherId}
                           onChange={handleInputChange}
                           className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800/80 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
@@ -625,19 +641,19 @@ export default function Login({ onLoginSuccess }) {
                   {/* Email / Student ID Field */}
                   <div className="flex flex-col gap-1 text-left">
                     <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                      {isStudent ? 'Student Email / Roll Number' : 'Official Faculty Email'}
+                      {isStudent ? (mode === 'signup' ? 'Student Email Address' : 'Student Email / Roll Number') : 'Official Faculty Email'}
                     </label>
                     <div className="relative flex items-center">
                       {isStudent ? (
-                        <School className="absolute left-3.5 text-gray-400 pointer-events-none" size={17} />
+                        <Mail className="absolute left-3.5 text-gray-400 pointer-events-none" size={17} />
                       ) : (
                         <Mail className="absolute left-3.5 text-gray-400 pointer-events-none" size={17} />
                       )}
                       <input
-                        type={isStudent ? 'text' : 'email'}
+                        type={isStudent && mode === 'signin' ? 'text' : 'email'}
                         name="identifier"
                         required
-                        placeholder={isStudent ? 'Enter student email or roll number' : 'Enter faculty email'}
+                        placeholder={isStudent ? (mode === 'signup' ? 'e.g. student@college.edu' : 'Enter student email or roll number') : 'e.g. faculty@college.edu'}
                         value={formData.identifier}
                         onChange={handleInputChange}
                         className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800/80 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm focus:outline-none transition-all ${
@@ -649,25 +665,68 @@ export default function Login({ onLoginSuccess }) {
                     </div>
                   </div>
 
-                  {/* Department/Grade for Signup */}
-                  {mode === 'signup' && (
+                  {/* Course & Semester for Student Signup */}
+                  {mode === 'signup' && isStudent && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 animate-slide-up">
+                      <div className="flex flex-col gap-1 text-left">
+                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Course / Branch</label>
+                        <div className="relative flex items-center">
+                          <BookOpen className="absolute left-3.5 text-gray-400 pointer-events-none" size={17} />
+                          <select
+                            name="course"
+                            value={formData.course}
+                            onChange={handleInputChange}
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800/80 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-xs md:text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                          >
+                            <option value="B.Tech Computer Science">B.Tech Computer Science</option>
+                            <option value="Information Technology">Information Technology</option>
+                            <option value="B.Sc Artificial Intelligence & Data Science">B.Sc AI & Data Science</option>
+                            <option value="BCA">Bachelor of Computer Applications (BCA)</option>
+                            <option value="MCA">Master of Computer Applications (MCA)</option>
+                            <option value="Electronics & Communication">Electronics & Communication</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1 text-left">
+                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Semester</label>
+                        <div className="relative flex items-center">
+                          <School className="absolute left-3.5 text-gray-400 pointer-events-none" size={17} />
+                          <select
+                            name="semester"
+                            value={formData.semester}
+                            onChange={handleInputChange}
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800/80 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-xs md:text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                          >
+                            <option value="Semester 1">Semester 1</option>
+                            <option value="Semester 2">Semester 2</option>
+                            <option value="Semester 3">Semester 3</option>
+                            <option value="Semester 4">Semester 4</option>
+                            <option value="Semester 5">Semester 5</option>
+                            <option value="Semester 6">Semester 6</option>
+                            <option value="Semester 7">Semester 7</option>
+                            <option value="Semester 8">Semester 8</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Department/Specialization for Faculty Signup */}
+                  {mode === 'signup' && !isStudent && (
                     <div className="flex flex-col gap-1 text-left animate-slide-up">
                       <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                        {isStudent ? 'Semester & Program' : 'Department & Specialization'}
+                        Department & Faculty Specialization
                       </label>
                       <div className="relative flex items-center">
                         <BookOpen className="absolute left-3.5 text-gray-400 pointer-events-none" size={17} />
                         <input
                           type="text"
                           name="departmentOrGrade"
-                          placeholder={isStudent ? 'Enter semester & program' : 'Enter department'}
+                          placeholder="e.g. Computer Science & Engineering"
                           value={formData.departmentOrGrade}
                           onChange={handleInputChange}
-                          className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800/80 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm focus:outline-none transition-all ${
-                            isStudent
-                              ? 'focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
-                              : 'focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
-                          }`}
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800/80 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                         />
                       </div>
                     </div>

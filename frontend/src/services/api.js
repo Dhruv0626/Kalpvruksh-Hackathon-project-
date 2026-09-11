@@ -44,9 +44,6 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify(classData),
     });
-    if (!res.ok) {
-      return { success: true, class: { ...classData, _id: 'cls_' + Date.now(), status: 'active' } };
-    }
     return res.json();
   },
 
@@ -56,9 +53,44 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ classCode }),
     });
-    if (!res.ok) {
-      return { success: true, class: { classCode, className: 'Java & Object-Oriented Programming', subject: 'Computer Science', _id: 'cls_java101', status: 'active' } };
-    }
+    const data = await res.json();
+    return data;
+  },
+
+  getClasses: async () => {
+    const res = await fetch(`${BASE_URL}/classes`, {
+      headers: getAuthHeaders(),
+    });
+    return res.json();
+  },
+
+  getActiveClasses: async () => {
+    const res = await fetch(`${BASE_URL}/classes/active`, {
+      headers: getAuthHeaders(),
+    });
+    return res.json();
+  },
+
+  getClassById: async (classId) => {
+    const res = await fetch(`${BASE_URL}/classes/${classId}`, {
+      headers: getAuthHeaders(),
+    });
+    return res.json();
+  },
+
+  leaveClass: async (classId) => {
+    const res = await fetch(`${BASE_URL}/classes/${classId}/leave`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    return res.json();
+  },
+
+  endClass: async (classId) => {
+    const res = await fetch(`${BASE_URL}/classes/${classId}/end`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
     return res.json();
   },
 
@@ -69,18 +101,21 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify(questionData),
     });
-    if (!res.ok) {
-      // Return simulated AI structured question group
-      return {
-        success: true,
-        question: {
-          _id: 'q_' + Date.now(),
-          ...questionData,
-          category: questionData.text.toLowerCase().includes('due') || questionData.text.toLowerCase().includes('time') ? 'administrative' : 'conceptual',
-          priority: questionData.text.toLowerCase().includes('inheritance') ? 'high' : 'medium',
-        },
-      };
-    }
+    return res.json();
+  },
+
+  getClassQuestions: async (classId) => {
+    const res = await fetch(`${BASE_URL}/questions/class/${classId}`, {
+      headers: getAuthHeaders(),
+    });
+    return res.json();
+  },
+
+  upvoteQuestion: async (questionId) => {
+    const res = await fetch(`${BASE_URL}/questions/${questionId}/vote`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
     return res.json();
   },
 
@@ -91,34 +126,14 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ answer: answerText }),
     });
-    if (!res.ok) {
-      return { success: true, answer: { groupId, answer: answerText, createdAt: new Date() } };
-    }
     return res.json();
   },
 
   // Class Summary
   getClassSummary: async (classId) => {
-    const res = await fetch(`${BASE_URL}/classes/${classId}/summary`, {
+    const res = await fetch(`${BASE_URL}/summary/class/${classId}`, {
       headers: getAuthHeaders(),
     });
-    if (!res.ok) {
-      return {
-        success: true,
-        summary: {
-          className: 'Java & Object-Oriented Programming',
-          classCode: 'JAVA101',
-          totalStudents: 48,
-          totalQuestions: 42,
-          questionGroups: 12,
-          repeatedQuestionsFiltered: 30,
-          answeredQuestions: 11,
-          unansweredQuestions: 1,
-          mostConfusingTopic: 'Inheritance vs Polymorphism & Interface Design',
-          affectedStudents: 22,
-        },
-      };
-    }
     return res.json();
   },
 };

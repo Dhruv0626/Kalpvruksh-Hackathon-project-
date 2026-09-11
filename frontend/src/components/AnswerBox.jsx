@@ -67,7 +67,7 @@ export default function AnswerBox({ group, onClose, onSubmitAnswer }) {
               className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1.5 cursor-pointer"
             >
               <Sparkles size={14} className={isGeneratingAi ? 'animate-spin' : ''} />
-              <span>{isGeneratingAi ? 'Generating...' : '✨ Suggest AI Answer'}</span>
+              <span>{isGeneratingAi ? 'Generating...' : 'Suggest AI Draft'}</span>
             </button>
           </div>
 

@@ -376,7 +376,7 @@ export default function StudentDashboard({ user, onLogout }) {
                     Semester 5 • Active Session
                   </span>
                   <h1 className="text-2xl md:text-3xl font-extrabold font-['Outfit'] mb-2">
-                    Welcome back, {user?.name || 'Student'}! 🚀
+                    Welcome back, {user?.name || 'Student'}
                   </h1>
                   <p className="text-sm md:text-base text-indigo-100 mb-6 leading-relaxed">
                     You have <strong className="text-white">1 live class</strong> happening right now and{' '}
@@ -774,21 +774,21 @@ export default function StudentDashboard({ user, onLogout }) {
                     onClick={() => setInputQuery("Explain Dijkstra's Algorithm in DSA")}
                     className="px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 text-gray-600 dark:text-gray-300 text-xs whitespace-nowrap cursor-pointer"
                   >
-                    💡 Dijkstra's Algorithm
+                    Dijkstra's Algorithm
                   </button>
                   <button
                     type="button"
                     onClick={() => setInputQuery('What is BCNF Normalization in DBMS?')}
                     className="px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 text-gray-600 dark:text-gray-300 text-xs whitespace-nowrap cursor-pointer"
                   >
-                    💡 BCNF Normalization
+                    BCNF Normalization
                   </button>
                   <button
                     type="button"
                     onClick={() => setInputQuery('How to prevent deadlocks in Operating Systems?')}
                     className="px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 text-gray-600 dark:text-gray-300 text-xs whitespace-nowrap cursor-pointer"
                   >
-                    💡 Deadlock Prevention
+                    Deadlock Prevention
                   </button>
                 </div>
 

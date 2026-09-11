@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { PlusCircle, Sparkles, ArrowRight, ShieldCheck, BookOpen, Radio, Copy, Check } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import { api } from '../services/api';
 
 export default function CreateClass({ user, onLogout, onNavigate, onSelectClass }) {
   const [formData, setFormData] = useState({
-    className: 'Java & Object-Oriented Programming',
-    subject: 'Computer Science',
-    topic: 'Inheritance & Polymorphism in OOP',
-    classCode: 'JAVA101',
+    className: '',
+    subject: '',
+    topic: '',
+    classCode: 'CS' + Math.floor(100 + Math.random() * 900),
   });
   const [copied, setCopied] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const generateRandomCode = () => {
     const prefixes = ['JAVA', 'CS', 'AI', 'DBMS', 'DSA', 'WEB'];
@@ -25,21 +28,30 @@ export default function CreateClass({ user, onLogout, onNavigate, onSelectClass 
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newClass = {
-      id: 'cls_' + Date.now(),
-      className: formData.className,
-      subject: formData.subject,
-      topic: formData.topic,
-      classCode: formData.classCode,
-      instructor: user?.name || 'Dr. Priya Mehta',
-      isLive: true,
-      studentsCount: 1,
-    };
+    setIsSubmitting(true);
+    setErrorMessage('');
 
-    if (onSelectClass) onSelectClass(newClass);
-    onNavigate('teacher_dashboard');
+    try {
+      const response = await api.createClass({
+        className: formData.className,
+        subject: formData.subject,
+        topic: formData.topic,
+        classCode: formData.classCode,
+      });
+
+      if (response?.class) {
+        if (onSelectClass) onSelectClass(response.class);
+        onNavigate('teacher_dashboard');
+      } else {
+        setErrorMessage('Failed to create classroom session in database');
+      }
+    } catch (err) {
+      setErrorMessage(err.message || 'Error saving class to database. Please check connection.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -60,6 +72,12 @@ export default function CreateClass({ user, onLogout, onNavigate, onSelectClass 
               Set up your live course session and generate an enrollment code for students.
             </p>
           </div>
+
+          {errorMessage && (
+            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold">
+              {errorMessage}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex flex-col gap-1 text-left">
@@ -93,9 +111,9 @@ export default function CreateClass({ user, onLogout, onNavigate, onSelectClass 
                   <button
                     type="button"
                     onClick={generateRandomCode}
-                    className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                    className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
                   >
-                    🎲 Regenerate Code
+                    Generate New Code
                   </button>
                 </div>
                 <div className="relative flex items-center">
@@ -123,7 +141,7 @@ export default function CreateClass({ user, onLogout, onNavigate, onSelectClass 
               <input
                 type="text"
                 required
-                placeholder="e.g. Inheritance & Polymorphism in OOP"
+                placeholder="e.g. Data Structures & Algorithms"
                 value={formData.topic}
                 onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white text-xs sm:text-sm focus:outline-none focus:border-emerald-500 transition-all"
@@ -131,9 +149,9 @@ export default function CreateClass({ user, onLogout, onNavigate, onSelectClass 
             </div>
 
             <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-500/20 text-xs text-gray-700 dark:text-gray-300 flex items-start gap-3">
-              <Sparkles size={18} className="text-emerald-500 shrink-0 mt-0.5" />
+              <Sparkles size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <span>
-                <strong>AI Live Question Filtering:</strong> When students ask questions with different words, EduNova will automatically group them under representative doubts.
+                <strong>Real-time AI Grouping:</strong> Questions asked by students during the session will be automatically clustered into representative doubt groups.
               </span>
             </div>
 

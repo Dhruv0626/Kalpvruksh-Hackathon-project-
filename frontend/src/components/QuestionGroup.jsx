@@ -36,9 +36,9 @@ export default function QuestionGroup({
     >
       {/* Top Warning Banner for Class-Wide Doubts */}
       {isClassWide && (
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-bold animate-pulse">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-bold">
           <AlertTriangle size={15} />
-          <span>🚨 CLASS-WIDE DOUBT DETECTED ({group.studentCount} students affected)</span>
+          <span>CLASS-WIDE DOUBT DETECTED ({group.studentCount} students affected)</span>
         </div>
       )}
 

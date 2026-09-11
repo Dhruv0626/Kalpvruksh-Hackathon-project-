@@ -16,7 +16,7 @@ const generateToken = (id) => {
 // @access  Public
 router.post('/register', async (req, res) => {
   try {
-    const { role, name, identifier, email, teacherId, password, departmentOrGrade, rollNumber } = req.body;
+    const { role, name, identifier, email, teacherId, password, departmentOrGrade, rollNumber, course, semester } = req.body;
 
     const userEmail = (email || identifier || '').toLowerCase().trim();
 
@@ -60,7 +60,9 @@ router.post('/register', async (req, res) => {
       name: name.trim(),
       email: userEmail,
       teacherId: role === 'teacher' && teacherId ? teacherId.trim() : undefined,
-      rollNumber: role === 'student' ? (rollNumber || identifier || '').trim() : undefined,
+      rollNumber: role === 'student' && rollNumber ? rollNumber.trim() : undefined,
+      course: role === 'student' && course ? course.trim() : undefined,
+      semester: role === 'student' && semester ? semester.trim() : undefined,
       password,
       departmentOrGrade: departmentOrGrade ? departmentOrGrade.trim() : undefined,
     });
@@ -77,6 +79,9 @@ router.post('/register', async (req, res) => {
         name: user.name,
         email: user.email,
         teacherId: user.teacherId,
+        rollNumber: user.rollNumber,
+        course: user.course,
+        semester: user.semester,
         departmentOrGrade: user.departmentOrGrade,
       },
     });
@@ -157,6 +162,9 @@ router.post('/login', async (req, res) => {
         name: user.name,
         email: user.email,
         teacherId: user.teacherId,
+        rollNumber: user.rollNumber,
+        course: user.course,
+        semester: user.semester,
         departmentOrGrade: user.departmentOrGrade,
       },
     });

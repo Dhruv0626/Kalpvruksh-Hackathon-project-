@@ -6,6 +6,8 @@
     "dev": "concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev",
+    "dev:ai": "uvicorn main:app --port 8000 --reload --app-dir Ai-service",
+    "dev:all": "concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\" \"uvicorn main:app --port 8000 --reload --app-dir Ai-service\"",
     "install:all": "npm install && npm --prefix backend install && npm --prefix frontend install"
   },
   "devDependencies": {

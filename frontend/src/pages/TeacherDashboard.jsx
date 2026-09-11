@@ -23,106 +23,122 @@ import {
   PlusCircle,
   ExternalLink,
   ShieldAlert,
-  ArrowRight
+  ArrowRight,
+  Monitor
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import VideoPanel from '../components/VideoPanel';
 import CategoryBadge from '../components/CategoryBadge';
 import PriorityBadge from '../components/PriorityBadge';
 import AnswerBox from '../components/AnswerBox';
+import { api } from '../services/api';
 
-export default function TeacherDashboard({ user, activeClass, onLogout, onNavigate }) {
-  const currentClass = activeClass || {
-    id: 'cls_java101',
-    className: 'Java & Object-Oriented Programming',
-    classCode: 'JAVA101',
-    subject: 'Computer Science',
-    topic: 'Inheritance & Polymorphism in Java',
-    instructor: user?.name || 'Faculty Instructor',
-    studentsCount: 48,
-  };
-
+export default function TeacherDashboard({ user, activeClass, onLogout, onNavigate, onExitClass }) {
+  const [liveClassData, setLiveClassData] = useState(activeClass || null);
+  const [questionGroups, setQuestionGroups] = useState([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(true);
   const [copiedCode, setCopiedCode] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeAnswerGroup, setActiveAnswerGroup] = useState(null);
-  const [expandedGroups, setExpandedGroups] = useState({ 'grp_1': true, 'grp_2': true });
-  const [elapsedSeconds, setElapsedSeconds] = useState(1420); // ~23 mins
+  const [expandedGroups, setExpandedGroups] = useState({});
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [isEnding, setIsEnding] = useState(false);
+  const [showEndModal, setShowEndModal] = useState(false);
 
-  // Live Question Groups Clustered by AI
-  const [questionGroups, setQuestionGroups] = useState([
-    {
-      id: 'grp_1',
-      mainQuestion: 'What is inheritance and how does the extends keyword work?',
-      category: 'conceptual',
-      priority: 'high',
-      studentCount: 14,
-      classWide: true,
-      status: 'unanswered',
-      createdAt: new Date(Date.now() - 12 * 60000).toISOString(),
-      questions: [
-        { id: 'q_1', text: 'What is inheritance in Java?', studentName: 'Student #104' },
-        { id: 'q_2', text: 'Can you explain the extends keyword syntax?', studentName: 'Student #118' },
-        { id: 'q_3', text: 'I do not understand how parent class variables get inherited.', studentName: 'Student #129' },
-        { id: 'q_4', text: 'What does inheritance mean with super() constructor?', studentName: 'Student #132' },
-      ],
-    },
-    {
-      id: 'grp_2',
-      mainQuestion: 'Difference between Method Overloading vs Method Overriding?',
-      category: 'conceptual',
-      priority: 'high',
-      studentCount: 9,
-      classWide: false,
-      status: 'unanswered',
-      createdAt: new Date(Date.now() - 8 * 60000).toISOString(),
-      questions: [
-        { id: 'q_5', text: 'Is overloading compile time or runtime?', studentName: 'Student #105' },
-        { id: 'q_6', text: 'Difference between overriding and overloading?', studentName: 'Student #112' },
-        { id: 'q_7', text: 'Can we override private methods in child class?', studentName: 'Student #141' },
-      ],
-    },
-    {
-      id: 'grp_3',
-      mainQuestion: 'When is Lab Assignment 3 on Polymorphism due for submission?',
-      category: 'administrative',
-      priority: 'low',
-      studentCount: 4,
-      classWide: false,
-      status: 'answered',
-      answer: {
-        text: 'Lab Assignment 3 is due this Friday by 11:59 PM on the student portal.',
-        teacher: user?.name || 'Professor',
-        time: '6 mins ago',
-      },
-      createdAt: new Date(Date.now() - 20 * 60000).toISOString(),
-      questions: [
-        { id: 'q_8', text: 'When do we have to submit assignment 3?', studentName: 'Student #102' },
-        { id: 'q_9', text: 'Assignment deadline date please?', studentName: 'Student #109' },
-      ],
-    },
-    {
-      id: 'grp_4',
-      mainQuestion: 'Code runner terminal gives "Cannot find symbol" error during compilation',
-      category: 'technical',
-      priority: 'medium',
-      studentCount: 3,
-      classWide: false,
-      status: 'unanswered',
-      createdAt: new Date(Date.now() - 4 * 60000).toISOString(),
-      questions: [
-        { id: 'q_10', text: 'My compiler gives cannot find symbol error for Parent class.', studentName: 'Student #115' },
-        { id: 'q_11', text: 'Compilation failed symbol not found in same package.', studentName: 'Student #122' },
-      ],
-    },
-  ]);
+  // Sync with incoming activeClass prop
+  useEffect(() => {
+    if (activeClass && activeClass.status !== 'ended') {
+      setLiveClassData(activeClass);
+    } else if (!activeClass || activeClass.status === 'ended') {
+      setLiveClassData(null);
+    }
+  }, [activeClass]);
+
+  const hasActiveClass = Boolean(
+    liveClassData &&
+    (liveClassData._id || liveClassData.id) &&
+    liveClassData.status === 'active'
+  );
+
+  const currentClass = liveClassData || {
+    id: '',
+    className: 'Live Classroom Session',
+    classCode: '',
+    subject: 'General',
+    topic: 'Live Q&A Session',
+    instructor: user?.name || 'Faculty Instructor',
+    students: [],
+    studentsCount: 0,
+  };
+
+  // Periodic poll & initial DB verification
+  useEffect(() => {
+    let isMounted = true;
+
+    async function syncClassState() {
+      const classId = liveClassData?._id || liveClassData?.id || activeClass?._id || activeClass?.id;
+      
+      if (classId) {
+        try {
+          const resClass = await api.getClassById(classId);
+          if (isMounted && resClass?.class) {
+            if (resClass.class.status === 'ended') {
+              setLiveClassData(null);
+              if (onExitClass) onExitClass();
+            } else {
+              setLiveClassData(resClass.class);
+              const resQuestions = await api.getClassQuestions(classId);
+              if (isMounted && resQuestions?.groups) {
+                setQuestionGroups(resQuestions.groups);
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching class data from DB:', err);
+        } finally {
+          if (isMounted) setLoadingQuestions(false);
+        }
+      } else {
+        // If no class passed, check if teacher has any ongoing active class in database
+        try {
+          const res = await api.getClasses();
+          if (isMounted && res?.classes) {
+            const active = res.classes.find((c) => c.status === 'active');
+            if (active) {
+              setLiveClassData(active);
+              const resQuestions = await api.getClassQuestions(active._id);
+              if (isMounted && resQuestions?.groups) {
+                setQuestionGroups(resQuestions.groups);
+              }
+            } else {
+              setLiveClassData(null);
+            }
+          }
+        } catch (err) {
+          console.error('Error checking active classes:', err);
+        } finally {
+          if (isMounted) setLoadingQuestions(false);
+        }
+      }
+    }
+
+    syncClassState();
+    const interval = setInterval(syncClassState, 3500);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [activeClass, liveClassData?._id]);
 
   // Session timer ticker
   useEffect(() => {
+    if (!hasActiveClass) return;
     const timer = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [hasActiveClass]);
 
   const formatTime = (secs) => {
     const m = Math.floor(secs / 60);
@@ -131,9 +147,28 @@ export default function TeacherDashboard({ user, activeClass, onLogout, onNaviga
   };
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(currentClass.classCode);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
+    if (currentClass?.classCode) {
+      navigator.clipboard.writeText(currentClass.classCode);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    }
+  };
+
+  const handleConfirmEndClass = async () => {
+    setIsEnding(true);
+    const classId = liveClassData?._id || liveClassData?.id || activeClass?._id || activeClass?.id;
+    if (classId) {
+      try {
+        await api.endClass(classId);
+      } catch (err) {
+        console.error('Failed to end class in database:', err);
+      }
+    }
+    setIsEnding(false);
+    setShowEndModal(false);
+    setLiveClassData(null);
+    if (onExitClass) onExitClass();
+    onNavigate('class_summary');
   };
 
   const toggleGroupExpand = (groupId) => {
@@ -144,59 +179,22 @@ export default function TeacherDashboard({ user, activeClass, onLogout, onNaviga
   };
 
   // Submit Answer to a Question Group
-  const handleSubmitAnswer = (groupId, answerText) => {
-    setQuestionGroups((prev) =>
-      prev.map((g) => {
-        if (g.id === groupId) {
-          return {
-            ...g,
-            status: 'answered',
-            answer: {
-              text: answerText,
-              teacher: user?.name || 'Professor',
-              time: 'Just now',
-            },
-          };
-        }
-        return g;
-      })
-    );
+  const handleSubmitAnswer = async (groupId, answerText) => {
+    try {
+      await api.answerQuestionGroup(groupId, answerText);
+      const classId = activeClass?._id || activeClass?.id;
+      if (classId) {
+        const res = await api.getClassQuestions(classId);
+        if (res?.groups) setQuestionGroups(res.groups);
+      }
+    } catch (err) {
+      console.error('Failed to submit answer to database:', err);
+    }
     setActiveAnswerGroup(null);
   };
 
-  // Live Demo Simulation: Simulate incoming questions clustered into group
-  const handleSimulateQuestion = () => {
-    const newDoubts = [
-      {
-        mainQuestion: 'Why does multiple inheritance fail in Java with diamond problem?',
-        category: 'conceptual',
-        priority: 'high',
-        studentCount: 5,
-        classWide: false,
-        questions: [
-          { id: 'sim_1', text: 'Why multiple inheritance not allowed in Java?', studentName: 'Student #145' },
-          { id: 'sim_2', text: 'What is the diamond problem in C++ vs Java?', studentName: 'Student #149' },
-        ],
-      },
-    ];
-
-    const pick = newDoubts[0];
-    const newGroup = {
-      id: 'grp_sim_' + Date.now(),
-      mainQuestion: pick.mainQuestion,
-      category: pick.category,
-      priority: pick.priority,
-      studentCount: pick.studentCount,
-      classWide: false,
-      status: 'unanswered',
-      createdAt: new Date().toISOString(),
-      questions: pick.questions,
-    };
-
-    setQuestionGroups((prev) => [newGroup, ...prev]);
-  };
-
   // Computed metrics
+  const enrolledStudentsCount = currentClass.students?.length || 0;
   const totalQuestions = questionGroups.reduce((acc, g) => acc + (g.questions?.length || g.studentCount || 1), 0);
   const totalGroups = questionGroups.length;
   const answeredGroups = questionGroups.filter((g) => g.status === 'answered').length;
@@ -215,9 +213,47 @@ export default function TeacherDashboard({ user, activeClass, onLogout, onNaviga
 
   return (
     <div className="min-h-screen w-full bg-slate-50 dark:bg-[#0b0f19] text-gray-900 dark:text-gray-100 flex flex-col font-['Plus_Jakarta_Sans'] transition-colors duration-300">
-      <Navbar user={user} onLogout={onLogout} onNavigate={onNavigate} currentPage="teacher_dashboard" />
+      <Navbar
+        user={user}
+        onLogout={onLogout}
+        onNavigate={onNavigate}
+        activeClass={hasActiveClass ? currentClass : null}
+        currentPage="teacher_dashboard"
+      />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col justify-center">
+        {!hasActiveClass ? (
+          <div className="py-16 px-6 text-center max-w-xl mx-auto space-y-6">
+            <div className="w-20 h-20 rounded-3xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto border border-emerald-200 dark:border-emerald-500/20 shadow-lg shadow-emerald-500/10">
+              <Radio size={36} className="opacity-75" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl sm:text-3xl font-extrabold font-['Outfit'] text-gray-900 dark:text-white">
+                No Active Live Session
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                You do not have a live classroom session running right now. Create a new lecture or select an existing session from your teaching dashboard.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => onNavigate('create_class')}
+                className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-500/25 transition-all cursor-pointer flex items-center gap-2"
+              >
+                <PlusCircle size={16} /> Create Live Class
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('teacher_home')}
+                className="px-6 py-3 rounded-2xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs sm:text-sm transition-all cursor-pointer"
+              >
+                Back to Dashboard
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
         {/* Top Header Card */}
         <div className="p-6 rounded-3xl bg-white dark:bg-gray-900/90 border border-gray-200 dark:border-white/10 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -228,7 +264,7 @@ export default function TeacherDashboard({ user, activeClass, onLogout, onNaviga
               <div className="flex items-center gap-2 mb-1">
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  Live Session Active
+                  Faculty Studio Live
                 </span>
                 <span className="text-xs font-semibold text-gray-400">
                   {currentClass.subject}
@@ -246,7 +282,7 @@ export default function TeacherDashboard({ user, activeClass, onLogout, onNaviga
           {/* Actions & Class Code */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-white/10 text-xs">
-              <span className="text-gray-400">Code:</span>
+              <span className="text-gray-400">Student Code:</span>
               <span className="font-mono font-bold text-gray-900 dark:text-white">{currentClass.classCode}</span>
               <button
                 type="button"
@@ -265,22 +301,114 @@ export default function TeacherDashboard({ user, activeClass, onLogout, onNaviga
 
             <button
               type="button"
-              onClick={handleSimulateQuestion}
-              className="px-4 py-2 rounded-2xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 text-xs font-bold hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-all cursor-pointer flex items-center gap-1.5"
-              title="Simulate student asking doubts for AI clustering"
-            >
-              <Sparkles size={14} />
-              <span>Simulate Doubt</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onNavigate('class_summary')}
-              className="px-4 py-2 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all cursor-pointer flex items-center gap-1.5"
+              onClick={() => setShowEndModal(true)}
+              className="px-4 py-2 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md shadow-red-600/25 transition-all cursor-pointer flex items-center gap-1.5"
             >
               <LogOut size={14} />
-              <span>End Class & Summary</span>
+              <span>End Session for All</span>
             </button>
+          </div>
+        </div>
+
+        {/* Attractive End Session Confirmation Modal */}
+        {showEndModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+            <div className="max-w-md w-full p-7 sm:p-8 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 shadow-2xl text-center space-y-6 animate-slide-up">
+              <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto border border-rose-200 dark:border-rose-500/20 shadow-lg shadow-rose-500/10">
+                <LogOut size={30} />
+              </div>
+
+              <div className="space-y-2">
+                <h2 className="text-xl sm:text-2xl font-extrabold font-['Outfit'] text-gray-900 dark:text-white">
+                  End Live Session for All?
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                  This will terminate the broadcast for all <strong>{enrolledStudentsCount} connected student{enrolledStudentsCount !== 1 ? 's' : ''}</strong> and compile the AI Question Analytics & Transcripts.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowEndModal(false)}
+                  disabled={isEnding}
+                  className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs sm:text-sm transition-all cursor-pointer"
+                >
+                  Cancel / Keep Live
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmEndClass}
+                  disabled={isEnding}
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-red-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {isEnding ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Ending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <LogOut size={16} />
+                      <span>Yes, End Session</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Studio Stream + Quick Controls (Google Meet Style) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8">
+            <VideoPanel
+              className={currentClass.className}
+              topic={currentClass.topic}
+              instructor={currentClass.instructor || user?.name}
+              studentCount={enrolledStudentsCount}
+            />
+          </div>
+
+          <div className="lg:col-span-4 flex flex-col gap-3.5">
+            <div className="p-5 rounded-3xl bg-white dark:bg-gray-900/90 border border-gray-200 dark:border-white/10 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Class Roster</h3>
+                <span className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-bold">
+                  {enrolledStudentsCount} Joined
+                </span>
+              </div>
+              <div className="text-sm font-bold text-gray-900 dark:text-white">
+                {enrolledStudentsCount === 0 ? (
+                  <p className="text-xs font-normal text-gray-400 py-2">
+                    No students have entered the room yet. Share code <span className="font-mono font-bold text-emerald-500">{currentClass.classCode}</span> with students.
+                  </p>
+                ) : (
+                  <p className="text-xs font-normal text-emerald-600 dark:text-emerald-400">
+                    {enrolledStudentsCount} student{enrolledStudentsCount > 1 ? 's' : ''} actively connected to live session.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-4 rounded-2xl bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-white/10 shadow-sm space-y-1">
+                <span className="text-[11px] font-semibold text-gray-400">Total Doubts</span>
+                <div className="text-2xl font-extrabold text-gray-900 dark:text-white">{totalQuestions}</div>
+              </div>
+              <div className="p-4 rounded-2xl bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-white/10 shadow-sm space-y-1">
+                <span className="text-[11px] font-semibold text-gray-400">AI Groups</span>
+                <div className="text-2xl font-extrabold text-purple-600 dark:text-purple-400">{totalGroups}</div>
+              </div>
+              <div className="p-4 rounded-2xl bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-white/10 shadow-sm space-y-1">
+                <span className="text-[11px] font-semibold text-gray-400">Answered</span>
+                <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{answeredGroups}</div>
+              </div>
+              <div className="p-4 rounded-2xl bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-white/10 shadow-sm space-y-1">
+                <span className="text-[11px] font-semibold text-gray-400">Unresolved</span>
+                <div className="text-2xl font-extrabold text-amber-600 dark:text-amber-400">{unansweredGroups}</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -291,8 +419,8 @@ export default function TeacherDashboard({ user, activeClass, onLogout, onNaviga
               <Users size={18} />
             </div>
             <div>
-              <div className="text-xl font-extrabold text-gray-900 dark:text-white">{currentClass.studentsCount || 48}</div>
-              <div className="text-[11px] font-semibold text-gray-400">Connected Students</div>
+              <div className="text-xl font-extrabold text-gray-900 dark:text-white">{currentClass.students?.length || currentClass.studentsCount || 0}</div>
+              <div className="text-[11px] font-semibold text-gray-400">Enrolled Students</div>
             </div>
           </div>
 
@@ -337,27 +465,27 @@ export default function TeacherDashboard({ user, activeClass, onLogout, onNaviga
           </div>
         </div>
 
-        {/* 🚨 CLASS-WIDE DOUBT BANNER */}
+        {/* CLASS-WIDE DOUBT BANNER */}
         {classWideDoubt && (
-          <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-red-500/15 via-rose-500/10 to-amber-500/15 border-2 border-red-500/40 dark:border-red-500/30 backdrop-blur-md shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 animate-pulse">
+          <div className="p-5 sm:p-6 rounded-3xl bg-rose-50 dark:bg-rose-950/20 border-2 border-rose-500/40 dark:border-rose-500/30 backdrop-blur-md shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-red-500 text-white flex items-center justify-center shadow-lg shadow-red-500/30 shrink-0">
-                <ShieldAlert size={26} />
+              <div className="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center shadow-lg shadow-rose-600/30 shrink-0">
+                <ShieldAlert size={24} />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-extrabold tracking-wider uppercase">
-                    🚨 Class-Wide Conceptual Doubt Detected
+                  <span className="px-2.5 py-0.5 rounded-md bg-rose-600 text-white text-[11px] font-bold tracking-wide uppercase">
+                    Class-Wide Bottleneck
                   </span>
-                  <span className="text-xs font-bold text-red-600 dark:text-red-400 flex items-center gap-1">
-                    <Users size={13} /> {classWideDoubt.studentCount} students stuck here
+                  <span className="text-xs font-semibold text-rose-700 dark:text-rose-400 flex items-center gap-1">
+                    <Users size={13} /> {classWideDoubt.studentCount} students affected
                   </span>
                 </div>
                 <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-tight">
                   {classWideDoubt.mainQuestion}
                 </h2>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                  AI detected high repetition among multiple students. Answering this once will broadcast the solution to all {classWideDoubt.studentCount} students.
+                  AI detected high repetition across students. Submitting one response will resolve the doubt for all {classWideDoubt.studentCount} students.
                 </p>
               </div>
             </div>
@@ -365,7 +493,7 @@ export default function TeacherDashboard({ user, activeClass, onLogout, onNaviga
             <button
               type="button"
               onClick={() => setActiveAnswerGroup(classWideDoubt)}
-              className="px-6 py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-red-600/30 hover:shadow-red-600/50 transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
+              className="px-6 py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-rose-600/25 transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
             >
               <Send size={16} /> Answer Class-Wide Doubt
             </button>
@@ -378,10 +506,10 @@ export default function TeacherDashboard({ user, activeClass, onLogout, onNaviga
           <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-white/5 w-full sm:w-auto overflow-x-auto">
             {[
               { id: 'all', label: 'All Doubts' },
-              { id: 'conceptual', label: '🧠 Conceptual' },
-              { id: 'administrative', label: '📅 Administrative' },
-              { id: 'technical', label: '🔧 Technical' },
-              { id: 'homework', label: '📚 Homework' },
+              { id: 'conceptual', label: 'Conceptual' },
+              { id: 'administrative', label: 'Administrative' },
+              { id: 'technical', label: 'Technical' },
+              { id: 'homework', label: 'Homework' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -452,8 +580,8 @@ export default function TeacherDashboard({ user, activeClass, onLogout, onNaviga
                         <CategoryBadge category={group.category} />
                         <PriorityBadge priority={group.priority} />
                         {group.classWide && (
-                          <span className="px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 text-[11px] font-bold">
-                            🚨 Class-Wide Doubt
+                          <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 text-[11px] font-bold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> Class-Wide Doubt
                           </span>
                         )}
                         <span className="flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2.5 py-0.5 rounded-full">
@@ -540,6 +668,8 @@ export default function TeacherDashboard({ user, activeClass, onLogout, onNaviga
             })
           )}
         </div>
+        </div>
+        )}
       </main>
 
       {/* Answer Modal Triggered by Answer Group */}

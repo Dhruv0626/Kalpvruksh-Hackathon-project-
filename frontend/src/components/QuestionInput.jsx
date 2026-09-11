@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Send, Sparkles, HelpCircle } from 'lucide-react';
+import { Send, Sparkles, HelpCircle, EyeOff, Eye } from 'lucide-react';
 import CategoryBadge from './CategoryBadge';
 
 export default function QuestionInput({ onAskQuestion, isSubmitting = false }) {
   const [text, setText] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   // Real-time categorization preview
   const getPredictedCategory = (query) => {
@@ -26,7 +27,7 @@ export default function QuestionInput({ onAskQuestion, isSubmitting = false }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!text.trim() || isSubmitting) return;
-    onAskQuestion(text.trim(), predictedCategory);
+    onAskQuestion(text.trim(), predictedCategory, isAnonymous);
     setText('');
   };
 
@@ -43,12 +44,27 @@ export default function QuestionInput({ onAskQuestion, isSubmitting = false }) {
         <label className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
           <HelpCircle size={15} className="text-indigo-500" /> Ask a Question or Doubt
         </label>
-        {predictedCategory && (
-          <div className="flex items-center gap-1.5 animate-slide-up">
-            <span className="text-[10px] text-gray-400">AI Tag:</span>
-            <CategoryBadge category={predictedCategory} />
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {predictedCategory && (
+            <div className="flex items-center gap-1.5 animate-slide-up">
+              <span className="text-[10px] text-gray-400">AI Tag:</span>
+              <CategoryBadge category={predictedCategory} />
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsAnonymous(!isAnonymous)}
+            className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+              isAnonymous
+                ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-500/30'
+                : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
+            }`}
+            title="Ask anonymously without revealing your name"
+          >
+            {isAnonymous ? <EyeOff size={13} /> : <Eye size={13} />}
+            <span>{isAnonymous ? 'Anonymous' : 'Public'}</span>
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="flex gap-2">
@@ -92,3 +108,4 @@ export default function QuestionInput({ onAskQuestion, isSubmitting = false }) {
     </div>
   );
 }
+

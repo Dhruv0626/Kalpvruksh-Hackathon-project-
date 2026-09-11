@@ -327,7 +327,7 @@ export default function FacultyDashboard({ user, onLogout }) {
                     Faculty Dashboard • Active Academic Term
                   </span>
                   <h1 className="text-2xl md:text-3xl font-extrabold font-['Outfit'] mb-2">
-                    Welcome, {user?.name || 'Professor'} 🎓
+                    Welcome, {user?.name || 'Professor'}
                   </h1>
                   <p className="text-sm md:text-base text-emerald-50 mb-6 leading-relaxed">
                     You have <strong className="text-white">3 active batches</strong> with 194 total students and{' '}

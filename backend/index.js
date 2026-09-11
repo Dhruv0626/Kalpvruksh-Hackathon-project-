@@ -3,6 +3,9 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
+const classRoutes = require('./routes/classRoutes');
+const questionRoutes = require('./routes/questionRoutes');
+const summaryRoutes = require('./routes/summaryRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -12,7 +15,7 @@ connectDB();
 
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: true,
   credentials: true,
 }));
 app.use(express.json());
@@ -20,6 +23,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/classes', classRoutes);
+app.use('/api/questions', questionRoutes);
+app.use('/api/summary', summaryRoutes);
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Sparkles,
+  GraduationCap,
   Sun,
   Moon,
   LogOut,
@@ -47,7 +47,7 @@ export default function Navbar({ user, onLogout, activeClass, onNavigate, curren
                   : 'bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 shadow-indigo-500/20'
               }`}
             >
-              <Sparkles size={19} />
+              <GraduationCap size={20} />
             </div>
             <div>
               <h1 className="text-lg font-black tracking-tight text-gray-900 dark:text-white font-['Outfit']">
@@ -72,9 +72,11 @@ export default function Navbar({ user, onLogout, activeClass, onNavigate, curren
               <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
                 {activeClass.className || activeClass.subject || 'Live Class'}
               </span>
-              <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[10px] font-mono text-gray-500">
-                Code: {activeClass.classCode || 'JAVA101'}
-              </span>
+              {activeClass.classCode && (
+                <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-[10px] font-mono text-gray-500">
+                  Code: {activeClass.classCode}
+                </span>
+              )}
             </div>
           )}
         </div>
